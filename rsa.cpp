@@ -18,7 +18,7 @@ using namespace std;
 typedef mpz_class bi;
 
 bool isPrime(int);
-bi string2bi(string*, unsigned int);
+bi string2bi(string, unsigned int);
 string getErrorMessage(int);
 string ReadFile(string);    //read whole file
 string ReadFileSW(string);  //single word
@@ -37,7 +37,7 @@ void showtime(){
 int main(){
     char ccase=0;
     unsigned char bajt;
-    string phrase, line, filename, crypted, decrypted, key="\0";
+    string phrase, line, filename, crypted, decrypted, key="\0",keypub="\0";
     int **Tab = new int*[95];
     for(int i = 0; i < 95; ++i) {
         Tab[i] = new int[95];
@@ -46,7 +46,6 @@ int main(){
     do{
         cout << " \nMenu:\n";
         cout << " 0. Wpisywanie do pliku binarnego\n";
-        cout << " g. Generowanie klucza o zadanej dlugosci\n";
         cout << " 1. Odczyt plikow binarnych\n";
         cout << " 2. Szyfrowanie pliku tekstowego\n";
         cout << " 3. Deszyfrowanie pliku\n";
@@ -66,20 +65,8 @@ int main(){
 
                 cout <<  "Wprowadz klucz publiczny do zapisania: \n";
                 //cin >> key;
-                key = "AAAAB3NzaC1yc2EAAAADAQABAAAAgQDS0ckeE+A2AMS9hKi7lBaKIuJgGfXyOF3l9XM83vVyhtXoNz5jyfJFihfgZdssD4V6rOGYlJITBOnoRYlHovHi2q2kqVZGvbo7iN2PSM9VB5RauiKWa9YBJ77wiYpYrLMcFZ4BLl0Ea6vjpcSwFDb6US9qbpN64cmRTADHlrU3JQ==";
-                WriteToBinFile("keypub.dat",key);
-                break;
-            }
-            case 'g': {
-                cout << "Wprowadz zdania do zapisania: \n"; 
-                //cin >> phrase;
-                phrase = "Ala ma kota, kot ma Ale.";
-                WriteToBinFile("dane.in",phrase);
-
-                cout << "Wprowadz klucz do zapisania: \n";
-                //cin >> phrase;
-                phrase = "12345678";
-                WriteToBinFile("key.dat",phrase);
+                keypub = "AAAAB3NzaC1yc2EAAAADAQABAAAAgQDS0ckeE+A2AMS9hKi7lBaKIuJgGfXyOF3l9XM83vVyhtXoNz5jyfJFihfgZdssD4V6rOGYlJITBOnoRYlHovHi2q2kqVZGvbo7iN2PSM9VB5RauiKWa9YBJ77wiYpYrLMcFZ4BLl0Ea6vjpcSwFDb6US9qbpN64cmRTADHlrU3JQ==";
+                WriteToBinFile("keypub.dat",keypub);
                 break;
             }
             case '1': {
@@ -104,13 +91,17 @@ int main(){
                 cout << "Odczytana fraza: \t" << phrase << endl;
                 key = ReadFile("key.dat");
                 cout << "Odczytany klucz prwatny: \t" << key << endl << endl;
-                key = ReadFile("keypub.dat");
-                cout << "Odczytany klucz publiczny: \t" << key << endl << endl;
+                keypub = ReadFile("keypub.dat");
+                cout << "Odczytany klucz publiczny: \t" << keypub << endl << "koniec"<< endl;
+                
+                
+                
+                //cout << "inicjalizacja\t:";
                 bi z;
-                z = string2bi(&key,204);
-                //cout << "Klucz zmaieniony na liczbe: ";
-                //mpz_out_str(stdout,10, z);
-
+                // cout << "zapis klucza do inta\t:";
+                z = string2bi(key,204);
+                cout << "\nKlucz jako mpz_t: \t: " << z <<"\n\n";
+                //gmp_printf ("Klucz jako liczba %Zd\n", &z);
                 break;
             }
             case '2': {
@@ -159,10 +150,11 @@ int main(){
     return 0;
 }
 
-bi string2bi(string * phrase, unsigned int size){
+bi string2bi(string phrase, unsigned int size){
     mpz_t z;
+    const void * s = phrase.c_str();
     mpz_init(z);
-    mpz_import(z, size, 1, sizeof(phrase[0]), 0, 0, phrase);
+    mpz_import(z, size, 1, sizeof(phrase[0]), 0, 0,s);
     bi r = bi(z);
     mpz_clear(z);
     return r;
@@ -184,7 +176,7 @@ bool isPrime(int liczba) {
 string ReadFile(string filename){
     int length;
     string phrase;
-    ifstream file (filename);
+    ifstream file (filename, ios::ate);
     if (file.is_open()){
         file.seekg(0,file.end);
         length = file.tellg();
