@@ -11,14 +11,17 @@
 #include <ctime>
 #include <cmath>
 #include <sstream>
+#include <gmpxx.h> // duze liczby
 
 double t;// czas wykonywania algorytmu 
 using namespace std;
+typedef mpz_class bi;
+
 bool isPrime(int);
+bi string2bi(string*, unsigned int);
 string getErrorMessage(int);
 string ReadFile(string);    //read whole file
 string ReadFileSW(string);  //single word
-//vector<char> ReadFileBIN(string);  //binary file
 string RSAencode(string,string);
 bool WriteToFile(string, string);
 bool WriteToBinFile(string, string);
@@ -43,13 +46,31 @@ int main(){
     do{
         cout << " \nMenu:\n";
         cout << " 0. Wpisywanie do pliku binarnego\n";
-        cout << " 1. Szyfrowanie pliku binarnego\n";
+        cout << " g. Generowanie klucza o zadanej dlugosci\n";
+        cout << " 1. Odczyt plikow binarnych\n";
         cout << " 2. Szyfrowanie pliku tekstowego\n";
         cout << " 3. Deszyfrowanie pliku\n";
         cout << " x - wyjscie\n--- \n";
         cin >> ccase;
         switch (ccase){
             case '0': {
+                cout << "Wprowadz zdania do zapisania: \n"; 
+                //cin >> phrase;
+                phrase = "Ala ma kota, kot ma Ale.";
+                WriteToBinFile("dane.in",phrase);
+
+                cout << "Wprowadz klucz prywatny do zapisania: \n";
+                //cin >> key;
+                key = "mmHmfSjZ40TB77o9ff8AQTPabxdJkcyI4TcUhH348Cq6R/dlbWpA8+8Icq5YJWkB8IMKXcWflFno2OZ80NroPAMmlsn+fo1S+R+U1cC/FvQxUYrruGIOl/pKAOIKP4HtvGMnGttPUEjCAy3FmzekAUVgOnciJm/JfWg7kQkrzje0NOkv+GyqQbENRSJAW4QJ/z2YOEtxl4W0SeJBwsbi/36e07/uVQquOtcAkuUx7v1IX0xD1HpgEonOnlgn+FHdO4Bek6AuNasAwI/LoSTasUOxWgJU/iqaribwFyQ9i/A/23r2Ai08m7Go0m13P/cKRrNBY0WOR57dEaBpi6CQXHJjzr4SZdkberQn+cDHmj9Z36vWI2XnKlPyBD1bCn5VCW83ZCf35+c10pO5/cQpX+mnPCBKoYmERoE9VaBPcn79dX8YStoRBl7cve1pUefrl/HvLSKwdIXFTxT3ek+9IDdN+0hwqyo9jWZux8XG+MbWTUsBPFNyC8B5cor2bLykssTYwEFuv2h31bBuxJN3Izooyvd2Qq/93MzhW4MWci9DC8qTkYT6Z1/nJCa3TJfbpVRtp8kotAqZDTUS6iBBXFUGKgV3fVqzmOSMBPVhJQewYD8pao1M5c7eINTOdVYkE3/FLFTpbfcU6yipalaUE3Jthfix1DSDm8QhkQJzf/crXEJJLsAVMj+9tJrh6jXBgXsQARQ3F0u3NYFlICE8bAvqINfQRx478XBdqbYbsdrjAx4FUvmDZct5bo8IEexlkWlrRzGLTaEEdowzIo93CiG7aQJGZWY33Bck5Eb1ghiN67koEDKrpnvGhgsxA/qA";
+                WriteToBinFile("key.dat",key);
+
+                cout <<  "Wprowadz klucz publiczny do zapisania: \n";
+                //cin >> key;
+                key = "AAAAB3NzaC1yc2EAAAADAQABAAAAgQDS0ckeE+A2AMS9hKi7lBaKIuJgGfXyOF3l9XM83vVyhtXoNz5jyfJFihfgZdssD4V6rOGYlJITBOnoRYlHovHi2q2kqVZGvbo7iN2PSM9VB5RauiKWa9YBJ77wiYpYrLMcFZ4BLl0Ea6vjpcSwFDb6US9qbpN64cmRTADHlrU3JQ==";
+                WriteToBinFile("keypub.dat",key);
+                break;
+            }
+            case 'g': {
                 cout << "Wprowadz zdania do zapisania: \n"; 
                 //cin >> phrase;
                 phrase = "Ala ma kota, kot ma Ale.";
@@ -79,9 +100,17 @@ int main(){
                 }*/
 
                 //odczyt frazy
-                filename = "dane.in";
-                phrase = ReadFile(filename);
-                cout << "\tOdczytana fraza: \n" << phrase << endl;
+                phrase = ReadFile("dane.in");
+                cout << "Odczytana fraza: \t" << phrase << endl;
+                key = ReadFile("key.dat");
+                cout << "Odczytany klucz prwatny: \t" << key << endl << endl;
+                key = ReadFile("keypub.dat");
+                cout << "Odczytany klucz publiczny: \t" << key << endl << endl;
+                bi z;
+                z = string2bi(&key,204);
+                //cout << "Klucz zmaieniony na liczbe: ";
+                //mpz_out_str(stdout,10, z);
+
                 break;
             }
             case '2': {
@@ -130,6 +159,14 @@ int main(){
     return 0;
 }
 
+bi string2bi(string * phrase, unsigned int size){
+    mpz_t z;
+    mpz_init(z);
+    mpz_import(z, size, 1, sizeof(phrase[0]), 0, 0, phrase);
+    bi r = bi(z);
+    mpz_clear(z);
+    return r;
+}
 
 bool isPrime(int liczba) {
     bool test = true;
