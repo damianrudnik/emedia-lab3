@@ -4,6 +4,11 @@
         "cctype": "cpp",
         "array": "cpp",
         "initializer_list": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "cstring": "cpp",
+        "cmath": "cpp",
+        "sstream": "cpp",
+        "system_error": "cpp",
+        "ostream": "cpp"
     }
 }
