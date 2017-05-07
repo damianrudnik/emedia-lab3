@@ -9,6 +9,9 @@
         "cmath": "cpp",
         "sstream": "cpp",
         "system_error": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "*.tcc": "cpp",
+        "iosfwd": "cpp",
+        "istream": "cpp"
     }
 }
