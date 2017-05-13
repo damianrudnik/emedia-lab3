@@ -49,21 +49,22 @@ void wys_w(vector<uint8_t>& v){
 }
 
 void wys_wbi(vector<bi> v) {
+    cout << "Wektor ma rozmiar: " << v.size() << ", a miesci w sobie: >>";
     while (!v.empty()){
         cout<<bi2char(v.back());
         v.pop_back();
     }
-    cout << endl;
+    cout << "<< koniec"<< endl;
 }
 
 void menu(){
     cout << " \nMenu:\n";
-    cout << " g. Generuj klucze\n";
-    cout << " 0. Wpisywanie do pliku binarnego\n";
-    cout << " 1. Odczyt plikow binarnych\n";
-    cout << " 2. Szyfrowanie pliku tekstowego\n";
-    cout << " 3. Deszyfrowanie pliku\n";
-    cout << " x - wyjscie\n--- \n";
+    cout << " g. Generate keys\n";
+    cout << " 0. Write phrase to the binary file\n";
+    cout << " 1. Read binary files\n";
+    cout << " 2. Encrypt binary file\n";
+    cout << " 3. Decrypt binary file\n";
+    cout << " x - EXIT\n--- \n";
 }
 
 int main(){
@@ -71,39 +72,25 @@ int main(){
     char ccase=0;
     int iKeySize;
     string phrase, line, filename,key="\0",keypub="\0", test;
-    unsigned int /*uipublickey_size, uiprivatekey_size,*/ msg_size;
+    unsigned int msg_size;
     bi bipublickey, biprivatekey, bimessage, bicrypted, bidecrypted, bin;
-    vector<bi> v_bimsg, v_bicrypted; // wektor, w ktorym wiadomosc jest podzielona na bajty, ale takie zlozone z bi
+    vector<bi> v_bimsg, v_bicrypted, v_bidecrypted; // wektor, w ktorym wiadomosc jest podzielona na bajty, ale takie zlozone z bi
                 
     // main loop
     do{
         menu();
         cin >> ccase;
         switch (ccase){
-            case 't': {
-                cin >> test;
-                bin = string2bi(test,test.length());
-                cout << "num: "<< bin << ", size: " << test.length() << endl;
-                cout<<bi2char(bin);
-                WriteToFile("test.txt",bi2string_raw(bin,test.length()));
-                vector<uint8_t> v;
-                bi2v(bin,test.length(),v);
-                wys_w(v);
-                v.clear();
-                break;
-            }
             case 'g': {
                 cout << "Size of the keys to generate: ";
                 cin >> iKeySize;
-                generateKey(iKeySize, bin, bipublickey, biprivatekey);
-                cout << "Private key: " << biprivatekey << endl;
-                cout << "Pubic key: " << bipublickey << endl;
-                cout << "Modulo key: " << bin << endl;
+                intime();
+                    generateKey(iKeySize, bin, bipublickey, biprivatekey);
+                showtime();
                 break;
             }
             case '0': {
                 cout << "The message: "; 
-                //cin >> noskipws >> phrase;
                 getline(cin,phrase);
                 WriteToBinFile("dane.in",phrase);
                 bi testbi = string2bi(phrase,phrase.length());
@@ -125,85 +112,71 @@ int main(){
                 cout << "The message as number: " << bimessage << endl << endl;
                 cout << "Private key: " << biprivatekey << endl << endl;
                 cout << "Pubic key: " << bipublickey << endl << endl;
-                
-                /*int prime = mpz_probab_prime_p(bipublickey.get_mpz_t(), 25);
-                cout << "Check if the key is prime: \t" << prime;
-                if ( prime == 0){
-                    cout << "\tKey is not prime. \n";
-                }else if (prime == 1){
-                    cout << "\tKey is probably prime. \n";
-                }else{
-                    cout << "\tKey is prime. \n";
-                }*/
                 break;
             }
-            /*case '2': {
-                // szyfrowanie cryptodecrypt(bi base, bi exponent, const bi &modulo)
-                bicrypted = cryptodecrypt(bimessage,bipublickey,bin);
-                cout << "\nCrypted message:\t";
-                vector<uint8_t> c;
-                bi2v(bicrypted,msg_size,c);
-                wys_w(c);
-                c.clear();
-                cout << endl;
-                //zapis do pliku
-                //WriteToFile("out.txt",crypted);
-                break;
-            }*/
             case '2': {
                 // szyfrowanie cryptodecrypt(bi base, bi exponent, const bi &modulo)
                 vector<uint8_t> v_8msg; // wektor w ktorym wiadomosc jest podzielona na bajty
                 bi2v(bimessage,msg_size,v_8msg); // o tutaj dziele to na mniejsze kawaleczki
                 mpz_clear(bimessage.get_mpz_t());// usuniecie wiadomosci w formie liczbowej
-                //v_bimsg.resize(msg_size);
                 char czmienna;
+
                 while (!v_8msg.empty()){ // tutaj zamieniam kazdy bajt z wektora v_8msg na liczbe do v_bimsg
-                    //cout << "while.." << endl;
                     czmienna = char(v_8msg.back());
-                    //cout << "po cascie.." << endl;
-                    //cout << char2bi(&czmienna) << endl;
                     v_bimsg.emplace_back(char2bi(&czmienna));
-                    //cout<<"."<<v_bimsg.back()<<endl;
                     v_8msg.pop_back();
                 }
-                //cout << "rozmiar wektora: " << int(v_bimsg.size())<<endl;
+
+                bi xored, tempbi;
+                bool firstrun = true;
+
                 while (!v_bimsg.empty()){// i tutaj kazda z liczb wektora v_bimsg szyfruje
-                    v_bicrypted.emplace_back(cryptodecrypt(v_bimsg.back(),bipublickey,bin));
+                    tempbi = cryptodecrypt(v_bimsg.back(),bipublickey,bin);
+                    if (!firstrun){
+                        mpz_xor(xored.get_mpz_t(),tempbi.get_mpz_t(),v_bicrypted.back().get_mpz_t());
+                    }else{ // bo ten znak to znak zakonczenia stringa
+                        //xored = tempbi;
+                        firstrun = false;
+                    }
+
+                    v_bicrypted.emplace_back(xored);
                     v_bimsg.pop_back();
                 }
-                //cout << "rozmiar wektora: " << int(v_bicrypted.size())<<endl;
                 // czyszczenie niuzywanych zmiennych
                 v_8msg.clear();
                 v_bimsg.clear();
-                //cout << "wyswietlanie.. " << endl;
-                //wys_wbi(v_bicrypted);
                 //zapis do pliku
                 //WriteToFile("out.txt",crypted);
                 cout << "crypt done" << endl;
+
+                //cout << "## Zaszyfrowana wiadomosc: ";
+                //wys_wbi(v_bicrypted);
                 break;
             }
             case '3':{
-                vector<bi> v_bidecrypted;
                 //deszyfrowanie
+                bi xored2, tempbi2, tempbi3, bisciagniety;
 
-                while (!v_bicrypted.empty()){// i tutaj kazda z liczb wektora v_bimsg szyfruje
-                    v_bidecrypted.push_back(cryptodecrypt(v_bicrypted.back(),biprivatekey,bin));
+                while (!v_bicrypted.empty()){// sciagam po kolei elementy wektora zaszyfrowanego - najpierw xor z poprzednim, nastepnie deszyfracja
+                    tempbi2 = v_bicrypted.back();
                     v_bicrypted.pop_back();
+                    if (!v_bicrypted.empty()){
+                        bisciagniety = v_bicrypted.back();
+                        mpz_xor(xored2.get_mpz_t(),tempbi2.get_mpz_t(),bisciagniety.get_mpz_t());
+                    }else{
+                        xored2 = tempbi2;
+                        break;
+                    }
+                    tempbi3 = cryptodecrypt(xored2,biprivatekey,bin);
+                    v_bidecrypted.emplace_back(tempbi3);
                 }
-                v_bicrypted.clear();
+                cout << "## Zdeszyfrowana wiadomosc: ";
                 wys_wbi(v_bidecrypted);
-
-                /*
-                bidecrypted = cryptodecrypt(bicrypted,biprivatekey,bin);
-                cout << "\nDecrypted message:\t";
-                vector<uint8_t> d;
-                bi2v(bidecrypted,msg_size,d);
-                wys_w(d);
-                d.clear();
-                cout << endl;*/
                 break;
             }
-            case 'x': break;
+            case 'x': 
+
+                break;
             default :
                 cout << "Wrong letter." << endl;
         }
@@ -211,19 +184,6 @@ int main(){
 
     return 0;
 }
-
-// Encrypt Function
-/*void encrypt(	  mpz_class& crypted, // Encrypted Message
-			const mpz_class& message, // Message to be encrypted
-			const mpz_class& key, // Keys
-			const mpz_class& bin)
-{
-	//encrypt: c = (m ^ e) mod n ||  decrypt: m = (c ^ d) mod n
-	mpz_powm(	crypted.get_mpz_t(), 	// Resulting Encrypted Message
-				message.get_mpz_t(), 	// Message to be Encrypted
-				key.get_mpz_t(), 	// Key Pair (n, e) private
-				bin.get_mpz_t());	// Key Pair (n, e) shared
-}*/
 
 bi string2bi(string phrase, unsigned int size){
     mpz_t z;
@@ -248,10 +208,7 @@ bi char2bi(char *phrase){
 char bi2char(bi binumber){
     char answer;
     string str = bi2string_raw(binumber,1);
-    //const char * cstr = cos.c_str();
-    //answer = cstr;
     uint liczba = atoi( str.c_str() );
-    //cout << "liczba: " << liczba << endl;
     answer = '\0'+liczba;
     return answer;
 }
@@ -259,12 +216,6 @@ char bi2char(bi binumber){
 string bi2string_raw(bi& binumber, unsigned int size) {
     char * answer = new char[size];
     mpz_get_str(answer,10,binumber.get_mpz_t());
-    /*//mpz_import(mpz_t rop, size_t count, int order, size_t size, int endian, size_t nails, const void *op)
-    //mpz_export(void *rop, size_t *countp, int order, size_t size, int endian, size_t nails, const mpz_t op)
-    size_t roman = size_t(size);
-    cout << "rozmiar : " << roman << endl;
-    size_t *wskroman = &roman;
-    mpz_export(answer, wskroman, 1, sizeof(char), 0, 0, binumber.get_mpz_t());*/
     return answer;
 }
 
@@ -275,76 +226,22 @@ void bi2v(bi& binum, unsigned int size, vector<uint8_t>& v) {
     mpz_export(&v[0], wskroman, 1, sizeof(uint8_t), 0, 0, binum.get_mpz_t());
 }
 
-
-/*int checkfilephraselength(string filename){
-    int length;
-    ifstream file (filename, ios::in|ios::binary|ios::ate);
-    if (file.is_open()){
-        length = file.tellg();
-        length = length-4;// dodatkowe 4 znaki na poczatku pliku
-        file.close();
-        return length;
-    }else return 0;
-}*/
-
-/*string bi2string(bi& binumber, unsigned int size, unsigned int answersize) {
-    char * answer = new char[size]; // miejsce na zapis liczby
-    mpz_get_str(answer,10,binumber.get_mpz_t());
-    
-    if (WriteToBinFile("tempbinaryfile.bin",answer)){
-        string phrase;
-        //int length = checkfilephraselength("tempbinaryfile.bin");
-        int i = 0, j = 0;
-        unsigned char test[2];
-
-        FILE * pFile;
-        fpos_t position;
-        pFile = fopen ( "tempbinaryfile.bin" , "rb" );
-        if (pFile==NULL) {fputs ("File error",stderr); exit (1);}
-
-        // check file size
-        fseek (pFile , 0 , SEEK_END);
-        int length = ftell (pFile);
-        length = length -4;
-        rewind (pFile);
-        
-        cout << "dlugosc odczytywanego ciagu: " << length << endl;
-        char * buffer = new char [length]; // miejsce na odczyt literek z pojedynczych bajtow
-        fsetpos (pFile, &position);
-        while(fread(test,2,1,pFile) == 1) {
-            i++;
-            if ( i > 2){
-                printf("test first byte 8 bits :%c\n", test[0]);
-                printf("test second byte : %c\n",test[1]);
-                buffer[j++] = test[0];
-                buffer[j++] = test[1];
-            }
-        }
-        fclose (pFile);
-        remove("tempbinaryfile.bin");
-        phrase.assign(buffer,size); // przypisanie bufora charow do stringa
-        return phrase;
-    }else{
-        return getErrorMessage(1); 
-    }
-}*/
-
 void generateKey(int size, mpz_class& n, mpz_class& d, mpz_class& e){
 	bool prime = false;
 	bool divisor = false;
-	mpz_class PNUM, result, q, p, phiN;
+	mpz_class primenum, result, q, p, phiN;
 	mpz_class one = mpz_class(1);
 
-	// Compute p & q
+	// Calculation of the p & q
 	for(int i = 0; i < 2; ++i){
 		while(!prime){
-			PNUM = r.get_z_bits(size);
+			primenum = r.get_z_bits(size);
 			int isPrime = 1;
-			isPrime = mpz_probab_prime_p(PNUM.get_mpz_t(), 100);
+			isPrime = mpz_probab_prime_p(primenum.get_mpz_t(), 100);
 			if(isPrime != 0) break;
 		}
-		if(i == 0) p = PNUM;
-		if(i == 1) q = PNUM;
+		if(i == 0) p = primenum;
+		if(i == 1) q = primenum;
 	}
 	n = p * q;
 	phiN = (p - 1) * (q - 1);
@@ -355,7 +252,7 @@ void generateKey(int size, mpz_class& n, mpz_class& d, mpz_class& e){
 		if((d < phiN) && (result == one)) break;
 	}
 
-	// Compute e:
+	// Calculation of the e:
 	mpz_invert(e.get_mpz_t(), d.get_mpz_t(), phiN.get_mpz_t());
 }
 
@@ -372,8 +269,6 @@ string ReadFile(string filename){
         cout << "Zczytano " << length << " znakow.\n";
         file.read(buffer,length);
         phrase.assign(buffer,length);
-        //phrase = buffer;
-        //delete[] buffer;
         file.close();
         return phrase;
     }else {
@@ -381,21 +276,7 @@ string ReadFile(string filename){
         return getErrorMessage(10); 
     }
 }
-/*
-int ReadBin(char* bufor, string filename) {
-    int size;
-    ifstream file(filename,ios::binary | ios::ate);
-    if (file.is_open()){
-        size = file.tellg();
-        bufor = new char [size];
-        file.seekg(0,file.beg);
-        file.read(bufor,size);
-        file.close();
-        cout << "Odczytano " << size << " bytow"<< endl;
-    }
-    return size;
-}
-*/
+
 string getErrorMessage(int errorCode){
     static map<int, string> codes;
     static bool initialized = false;
@@ -448,8 +329,6 @@ bool WriteToBinFile(string filename, string phrase){
     cout << endl << "Rozmiar: " << length << endl;
     ofstream encodefile (filename, ios::out | ios::trunc | ios::binary);
     if (encodefile.is_open()){
-        //char * buffer = new char [length];
-        //strcpy(buffer,phrase.c_str());
         encodefile.write(reinterpret_cast<char *>(&length),sizeof(int));
         encodefile.write(phrase.c_str(),length);
         encodefile.flush();
@@ -464,13 +343,6 @@ bool WriteToBinFile(string filename, string phrase){
 
 bi cryptodecrypt(bi &base, bi &exponent, const bi &modulo){
    bi result;
-   /* bi result = 1;
-    while (exponent > 0){
-        if (bi(exponent & 1) == 1)
-            result = (base*result)%modulo;
-        base = (base * base) % modulo;
-        exponent >>= 1;
-    }*/
     mpz_powm (result.get_mpz_t(), base.get_mpz_t(), exponent.get_mpz_t(), modulo.get_mpz_t());
     return result;
 }
